@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini QA Autopilot & Automation | Global Hackathon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .gradient-border { background: linear-gradient(90deg, #3b82f6, #8b5cf6); padding: 2px; border-radius: 12px; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .font-mono { font-family: 'Fira Code', monospace; }
+        #drop-zone.dragover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+                    GEMINI QA AUTOPILOT & AUTOMATION
+                </h1>
+                <p class="text-slate-400 mt-2 text-sm uppercase tracking-widest">
+                    Video-to-Bug-Report & Test-Script | Powered by Gemini 3
+                </p>
+            </div>
+            <div id="connection-status">
+                <span class="px-3 py-1 bg-green-500/20 text-green-400 border border-green-500/50 rounded-full text-xs font-mono uppercase tracking-tighter">
+                    Ready for use!
+                </span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="space-y-6">
+                <div class="gradient-border">
+                    <div class="glass-card p-12 rounded-[10px] text-center border-2 border-dashed border-slate-700 hover:border-blue-500 transition-all cursor-pointer" id="drop-zone">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                        </svg>
+                        <p class="text-xl font-medium text-white">Upload Bug Video</p>
+                        <p class="text-slate-500 text-sm mt-2 font-mono">Drag & Drop for Instant Analysis</p>
+                        <input type="file" id="file-input" class="hidden" accept="video/*">
+                    </div>
+                </div>
+
+                <div class="glass-card p-6 rounded-xl">
+                    <h3 class="font-semibold mb-4 text-blue-400 uppercase text-xs tracking-wider">Engine Status</h3>
+                    <div class="space-y-3" id="status-list">
+                        <div class="flex items-center text-sm text-slate-500">
+                            <div class="w-2 h-2 bg-slate-600 rounded-full mr-3"></div>
+                            Awaiting video file...
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="glass-card p-8 rounded-xl min-h-[500px] flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-semibold text-purple-400 uppercase text-xs tracking-wider">Smart Analysis Output</h3>
+                        <button id="copy-btn" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded transition">Copy Everything</button>
+                    </div>
+                    <div id="ai-output" class="font-mono text-xs text-slate-300 leading-relaxed whitespace-pre-wrap overflow-y-auto flex-grow">
+                        The Bug Report and Playwright Automation script will be generated here...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const aiOutput = document.getElementById('ai-output');
+        const statusList = document.getElementById('status-list');
+        const copyBtn = document.getElementById('copy-btn');
+
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('video/')) handleFileUpload(file);
+        };
+
+        fileInput.onchange = (e) => { if (e.target.files[0]) handleFileUpload(e.target.files[0]); };
+
+        async function handleFileUpload(file) {
+            statusList.innerHTML = `
+                <div class="flex items-center text-sm text-blue-400">
+                    <div class="w-2 h-2 bg-blue-400 rounded-full mr-3 animate-pulse"></div>
+                    Uploading to Server...
+                </div>
+                <div class="flex items-center text-sm text-purple-400 mt-2">
+                    <div class="w-2 h-2 bg-purple-400 rounded-full mr-3 animate-pulse"></div>
+                    Gemini 3 Flash Vision Active...
+                </div>
+            `;
+            
+            aiOutput.innerText = "Analyzing video frames and coding the test script...";
+
+            const formData = new FormData();
+            formData.append('video', file);
+
+            try {
+                const response = await fetch('http://localhost:3000/analyze-bug', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.success) {
+                    aiOutput.innerText = data.message;
+                    statusList.innerHTML = `<div class="flex items-center text-sm text-green-400"><div class="w-2 h-2 bg-green-400 rounded-full mr-3"></div>Analysis & Script Generated!</div>`;
+                } else {
+                    aiOutput.innerText = "Error: " + data.error;
+                }
+            } catch (err) {
+                aiOutput.innerText = "Connection lost. Check server logs.";
+            }
+        }
+
+        copyBtn.onclick = () => {
+            navigator.clipboard.writeText(aiOutput.innerText);
+            copyBtn.innerText = "Copied!";
+            setTimeout(() => copyBtn.innerText = "Copy Everything", 2000);
+        };
+    </script>
+</body>
+</html>
